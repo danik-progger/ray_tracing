@@ -24,6 +24,8 @@ class Camera {
     Vec3 viewportUpperLeft = cameraPosition - Vec3(0, 0, focalLength) -
                              viewportU / 2 - viewportV / 2;
     pixel00Loc = viewportUpperLeft + 0.5 * (pixelDeltaU + pixelDeltaV);
+
+    pixelSamplesScale = 1.0 / samplesPerPixel;
   }
 
   void render(const Hittable& world) {
@@ -32,13 +34,18 @@ class Camera {
     for (int j = 0; j < imageHeight; j++) {
       std::clog << "\rScan lines remaining: " << (imageHeight - j) << ' '
                 << std::flush;
-      for (int i = 0; i < imageWidth; i++) {
+      for (int i = 0; i < imageWidth; i++) { 
         auto pixelCenter = pixel00Loc + (i * pixelDeltaU) + (j * pixelDeltaV);
         auto rayDirection = pixelCenter - cameraPosition;
         Ray r(cameraPosition, rayDirection);
 
-        Color pixelColor = ray_color(r, world);
-        write_color(std::cout, pixelColor);
+        Color pixelColor(0, 0, 0);
+        for (uint32_t sample = 0; sample < samplesPerPixel; ++sample) {
+          Ray r = getRay(i, j);
+          pixelColor += ray_color(r, world);
+        }
+
+        write_color(std::cout, pixelColor * pixelSamplesScale);
       }
     }
 
@@ -56,6 +63,20 @@ class Camera {
     double a = 0.5 * (unit_direction.y() + 1.0);
     return (1.0 - a) * Color(1.0, 1.0, 1.0) + a * Color(0.5, 0.7, 1.0);
   }
+  Ray getRay(int i, int j) const {
+    Vec3 offset = sample_square();
+    Vec3 pixel_sample = pixel00Loc + ((i + offset.x()) * pixelDeltaU) +
+                        ((j + offset.y()) * pixelDeltaV);
+
+    Point3 ray_origin = cameraPosition;
+    Vec3 ray_direction = pixel_sample - ray_origin;
+
+    return Ray(ray_origin, ray_direction);
+  }
+
+  Vec3 sample_square() const {
+    return Vec3(random_double() - 0.5, random_double() - 0.5, 0);
+  }
 
   int32_t imageHeight;
   Point3 cameraPosition;
@@ -64,6 +85,8 @@ class Camera {
   Vec3 pixelDeltaV;
   double aspectRatio;
   int32_t imageWidth;
+  int32_t samplesPerPixel = 10;
+  double pixelSamplesScale;
 };
 
-#endif // CAMERA_H
+#endif  // CAMERA_H
