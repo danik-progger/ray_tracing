@@ -4,15 +4,15 @@ project (rat_tracing_in_one_weekend LANGUAGES CXX)
 
 set (ONE_WEEKEND
   src/main.cpp
-#   src/classes/camera.h
+  src/classes/camera.h
   src/classes/color.h
-#   src/classes/hittable.h
-#   src/classes/hittable_list.h
-#   src/classes/interval.h
+  src/classes/hittable.h
+  src/classes/hittable-list.h
+  src/classes/interval.h
 #   src/classes/material.h
   src/classes/ray.h
-#   src/classes/rtweekend.h
-#   src/classes/sphere.h
+  src/classes/utils.h
+  src/classes/sphere.h
   src/classes/vec3.h
 )
 

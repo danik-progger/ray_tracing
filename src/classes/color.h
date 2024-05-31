@@ -17,4 +17,4 @@ void write_color(std::ostream& out, const Color& pixel_color) {
   out << r_byte << ' ' << g_byte << ' ' << b_byte << '\n';
 }
 
-#endif
+#endif  // COLOR_H
