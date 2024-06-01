@@ -6,8 +6,8 @@
 
 class Camera {
  public:
-  Camera(double aspectRatio, int32_t imageWidth)
-      : aspectRatio(aspectRatio), imageWidth(imageWidth) {
+  Camera(double aspectRatio, int32_t imageWidth, int32_t maxRays)
+      : aspectRatio(aspectRatio), imageWidth(imageWidth), maxRays(maxRays) {
     imageHeight = int32_t(imageWidth / aspectRatio);
     imageHeight = (imageHeight < 1) ? 1 : imageHeight;
 
@@ -26,6 +26,7 @@ class Camera {
     pixel00Loc = viewportUpperLeft + 0.5 * (pixelDeltaU + pixelDeltaV);
 
     pixelSamplesScale = 1.0 / samplesPerPixel;
+    maxRays = 10;
   }
 
   void render(const Hittable& world) {
@@ -34,7 +35,7 @@ class Camera {
     for (int j = 0; j < imageHeight; j++) {
       std::clog << "\rScan lines remaining: " << (imageHeight - j) << ' '
                 << std::flush;
-      for (int i = 0; i < imageWidth; i++) { 
+      for (int i = 0; i < imageWidth; i++) {
         auto pixelCenter = pixel00Loc + (i * pixelDeltaU) + (j * pixelDeltaV);
         auto rayDirection = pixelCenter - cameraPosition;
         Ray r(cameraPosition, rayDirection);
@@ -42,7 +43,7 @@ class Camera {
         Color pixelColor(0, 0, 0);
         for (uint32_t sample = 0; sample < samplesPerPixel; ++sample) {
           Ray r = getRay(i, j);
-          pixelColor += ray_color(r, world);
+          pixelColor += ray_color(r, maxRays, world);
         }
 
         write_color(std::cout, pixelColor * pixelSamplesScale);
@@ -53,10 +54,12 @@ class Camera {
   }
 
  private:
-  Color ray_color(const Ray& r, const Hittable& world) {
+  Color ray_color(const Ray& r, int32_t maxRays, const Hittable& world) {
+    if (maxRays <= 0) return Color(0, 0, 0);
     HitRecord rec;
-    if (world.hit(r, Interval(0, INF), rec)) {
-      return 0.5 * (rec.normal + Color(1, 1, 1));
+    if (world.hit(r, Interval(0.001, INF), rec)) {
+      Vec3 direction = random_on_hemisphere(rec.normal);
+      return 0.5 * ray_color(Ray(rec.p, direction), maxRays - 1, world);
     }
 
     Vec3 unit_direction = unit_vector(r.direction());
@@ -87,6 +90,7 @@ class Camera {
   int32_t imageWidth;
   int32_t samplesPerPixel = 10;
   double pixelSamplesScale;
+  int32_t maxRays;
 };
 
 #endif  // CAMERA_H
