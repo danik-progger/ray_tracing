@@ -1,8 +1,9 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include "color.h"
+#include "utils.h"
 #include "hittable.h"
+#include "material.h"
 
 class Camera {
  public:
@@ -58,8 +59,11 @@ class Camera {
     if (maxRays <= 0) return Color(0, 0, 0);
     HitRecord rec;
     if (world.hit(r, Interval(0.001, INF), rec)) {
-      Vec3 direction = random_on_hemisphere(rec.normal);
-      return 0.5 * ray_color(Ray(rec.p, direction), maxRays - 1, world);
+      Ray scattered;
+      Color attenuation;
+      if (rec.material->scatter(r, rec, attenuation, scattered))
+        return attenuation * ray_color(scattered, maxRays - 1, world);
+      return Color(0, 0, 0);
     }
 
     Vec3 unit_direction = unit_vector(r.direction());

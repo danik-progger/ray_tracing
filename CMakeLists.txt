@@ -9,7 +9,7 @@ set (ONE_WEEKEND
   src/classes/hittable.h
   src/classes/hittable-list.h
   src/classes/interval.h
-#   src/classes/material.h
+  src/classes/material.h
   src/classes/ray.h
   src/classes/utils.h
   src/classes/sphere.h

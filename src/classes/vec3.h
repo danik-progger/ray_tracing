@@ -1,10 +1,7 @@
 #ifndef VEC3_H
 #define VEC3_H
 
-#include <cmath>
-#include <iostream>
-
-#include "utils.h"
+// #include "utils.h"
 
 class Vec3 {
  public:
@@ -48,6 +45,11 @@ class Vec3 {
   static Vec3 random(double min, double max) {
     return Vec3(random_double(min, max), random_double(min, max),
                 random_double(min, max));
+  }
+
+  bool near_zero() const {
+    auto s = 1e-8;
+    return (fabs(e[0]) < s) && (fabs(e[1]) < s) && (fabs(e[2]) < s);
   }
 };
 
@@ -108,6 +110,10 @@ inline Vec3 random_on_hemisphere(const Vec3& normal) {
     return on_unit_sphere;
   else
     return -on_unit_sphere;
+}
+
+inline Vec3 reflect(const Vec3& v, const Vec3& n) {
+  return v - 2 * dot(v, n) * n;
 }
 
 #endif  // VEC3_H
