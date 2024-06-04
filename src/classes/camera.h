@@ -1,9 +1,9 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include "utils.h"
 #include "hittable.h"
 #include "material.h"
+#include "utils.h"
 
 class Camera {
  public:
@@ -37,10 +37,6 @@ class Camera {
       std::clog << "\rScan lines remaining: " << (imageHeight - j) << ' '
                 << std::flush;
       for (int i = 0; i < imageWidth; i++) {
-        auto pixelCenter = pixel00Loc + (i * pixelDeltaU) + (j * pixelDeltaV);
-        auto rayDirection = pixelCenter - cameraPosition;
-        Ray r(cameraPosition, rayDirection);
-
         Color pixelColor(0, 0, 0);
         for (uint32_t sample = 0; sample < samplesPerPixel; ++sample) {
           Ray r = getRay(i, j);

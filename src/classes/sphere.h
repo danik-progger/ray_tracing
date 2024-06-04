@@ -2,7 +2,6 @@
 #define SPHERE_H
 
 #include "hittable.h"
-#include "utils.h"
 
 class Sphere : public Hittable {
  public:
@@ -18,17 +17,18 @@ class Sphere : public Hittable {
     auto discriminant = h * h - a * c;
     if (discriminant < 0) return false;
 
-    auto sqrtD = std::sqrt(discriminant);
+    auto sqrtd = sqrt(discriminant);
 
-    auto root = (h - sqrtD) / a;
+    auto root = (h - sqrtd) / a;
     if (!ray_t.surrounds(root)) {
-      root = (h + sqrtD) / a;
+      root = (h + sqrtd) / a;
       if (!ray_t.surrounds(root)) return false;
     }
 
     rec.t = root;
     rec.p = r.at(rec.t);
-    rec.normal = (rec.p - center) / radius;
+    Vec3 outward_normal = (rec.p - center) / radius;
+    rec.set_face_normal(r, outward_normal);
     rec.material = material;
 
     return true;
