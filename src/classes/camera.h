@@ -7,27 +7,46 @@
 
 class Camera {
  public:
-  Camera(double aspectRatio, int32_t imageWidth, int32_t maxRays)
-      : aspectRatio(aspectRatio), imageWidth(imageWidth), maxRays(maxRays) {
+  Camera(double aspectRatio, int32_t imageWidth, int32_t maxRays, double fov,
+         Point3 lookFrom, Point3 lookAt, Vec3 vup, double defocusAngle,
+         double focusDist)
+      : aspectRatio(aspectRatio),
+        imageWidth(imageWidth),
+        maxRays(maxRays),
+        fov(fov),
+        lookFrom(lookFrom),
+        lookAt(lookAt),
+        vup(vup),
+        defocusAngle(defocusAngle),
+        focusDist(focusDist) {
     imageHeight = int32_t(imageWidth / aspectRatio);
     imageHeight = (imageHeight < 1) ? 1 : imageHeight;
 
-    double focalLength = 1.0;
-    double viewportHeight = 2.0;
+    // double focalLength = (lookFrom - lookAt).length();
+    auto theta = deg_to_rad(fov);
+    auto h = tan(theta / 2);
+    auto viewportHeight = 2 * h * focusDist;
     double viewportWidth = viewportHeight * (double(imageWidth) / imageHeight);
-    cameraPosition = Point3(0, 0, 0);
+    cameraPosition = lookFrom;
 
-    Vec3 viewportU = Vec3(viewportWidth, 0, 0);
-    Vec3 viewportV = Vec3(0, -viewportHeight, 0);
+    w = unit_vector(lookFrom - lookAt);
+    u = unit_vector(cross(vup, w));
+    v = cross(w, u);
+
+    Vec3 viewportU = viewportWidth * u;
+    Vec3 viewportV = viewportHeight * -v;
     pixelDeltaU = viewportU / imageWidth;
     pixelDeltaV = viewportV / imageHeight;
 
-    Vec3 viewportUpperLeft = cameraPosition - Vec3(0, 0, focalLength) -
-                             viewportU / 2 - viewportV / 2;
+    Vec3 viewportUpperLeft =
+        cameraPosition - (focusDist * w) - viewportU / 2 - viewportV / 2;
+
     pixel00Loc = viewportUpperLeft + 0.5 * (pixelDeltaU + pixelDeltaV);
 
     pixelSamplesScale = 1.0 / samplesPerPixel;
-    maxRays = 10;
+    auto defocus_radius = focusDist * tan(deg_to_rad(defocusAngle / 2));
+    defocusDiskU = u * defocus_radius;
+    defocusDiskV = v * defocus_radius;
   }
 
   void render(const Hittable& world) {
@@ -71,7 +90,8 @@ class Camera {
     Vec3 pixel_sample = pixel00Loc + ((i + offset.x()) * pixelDeltaU) +
                         ((j + offset.y()) * pixelDeltaV);
 
-    Point3 ray_origin = cameraPosition;
+    auto ray_origin =
+        (defocusAngle <= 0) ? cameraPosition : defocus_disk_sample();
     Vec3 ray_direction = pixel_sample - ray_origin;
 
     return Ray(ray_origin, ray_direction);
@@ -81,6 +101,11 @@ class Camera {
     return Vec3(random_double() - 0.5, random_double() - 0.5, 0);
   }
 
+  Point3 defocus_disk_sample() const {
+    auto p = random_in_unit_disk();
+    return cameraPosition + (p[0] * defocusDiskU) + (p[1] * defocusDiskV);
+  }
+
   int32_t imageHeight;
   Point3 cameraPosition;
   Point3 pixel00Loc;
@@ -88,9 +113,19 @@ class Camera {
   Vec3 pixelDeltaV;
   double aspectRatio;
   int32_t imageWidth;
-  int32_t samplesPerPixel = 10;
+  int32_t samplesPerPixel = 500;
   double pixelSamplesScale;
   int32_t maxRays;
+  double fov;
+  Point3 lookFrom = Point3(0, 0, 0);
+  Point3 lookAt = Point3(0, 0, -1);
+  Vec3 vup = Vec3(0, 1, 0);
+  Vec3 u, v, w;
+
+  Vec3 defocusDiskU;
+  Vec3 defocusDiskV;
+  double defocusAngle;
+  double focusDist;
 };
 
 #endif  // CAMERA_H
